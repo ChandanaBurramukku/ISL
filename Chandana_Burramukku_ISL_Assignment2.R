@@ -4,9 +4,8 @@ setwd("C:/R")
 #reading the file from the directory
 college <- read.csv("College.csv")
 head(College)
-
-
-#1.b -> NEED TO CHECK THIS AS WELL
+#1.b Now you should see that the first data column is Private. Note that another column labeled row.names now appears before the
+#Private column. However, this is not a data column but rather the name that R is giving to each row.
 rownames (college) <- college[, 1]
 View (college)
 college <- college[, -1]
@@ -18,15 +17,14 @@ summary(college)
 #1.c.ii. Use the pairs() function to produce a scatterplot matrix of the first ten columns or variables of the data. 
 #Recall that you can reference the first ten columns of a matrix A using A[,1:10].
 college$Private <- as.factor(college$Private)
-pairs(college[, 1:10])
+#pairs(college[, 1:10])
+head(college)
 
 
 #1.c.iii. Use the plot() function to produce side-by-side boxplots of Outstate versus Private.
-# NOT DONE NEED TO CHECK not able to get the output
-plot(college$Private, college$Outstate, xlab ="Private University", ylab ="Out of State tuition in USD", main = "Outstate Tuition Plot")
-pairs(college[,1:10])
-plot(Outstate ~Private, data=college,col=c("green","red"))
-plot(college$Private, college$Outstate, xlab = "Private University", ylab = "Tuition in $")
+plot(college$Private, college$Outstate, xlab = "Private", ylab = "Out-of-state tuition in dollars")
+
+
 #iv. Create a new qualitative variable, called Elite, by binning the Top10perc variable. We are going to divide universities
 #into two groups based on whether or not the proportion of students coming from the top 10 % of their high school classes exceeds 50 %.
 Elite <- rep("No", nrow(college))
@@ -59,7 +57,7 @@ str(Auto)
 
 #2.b What is the range of each quantitative predictor? You can answer this using the range() function.
 sapply(Auto[, -c(4, 9)], mean)
-qualitative_columns <- which(names(Auto) %in% c("name", "origin", "originf"))
+qualitative_columns <- which(names(Auto) %in% c("name", "origin", "origins"))
 qualitative_columns
 sapply(Auto[, -qualitative_columns], range)
 #2.(c) What is the mean and standard deviation of each quantitative predictor?
@@ -117,11 +115,15 @@ pairs(Boston)
 
 
 #3.(c) Are any of the predictors associated with per capita crime rate? If so, explain the relationship.
-Boston.corr = cor(Boston)
-Boston.corr.crim = Boston.corr[-1,1]
-print(
-  Boston.corr.crim[order(abs(Boston.corr.crim), decreasing = T)]
-)
+par(mfrow = c(2, 2))
+plot(Boston$crim ~ Boston$zn, log = 'xy', col = 'green')
+plot(Boston$crim ~ Boston$age, log = 'xy', col = 'green')
+plot(Boston$crim ~ Boston$dis, log = 'xy', col = 'red')
+plot(Boston$crim ~ Boston$lstat, log = 'xy', col = 'red')
+#From the graph we can say that we have a association with crim for the predictors.
+#For age the units which are build before 1940 raises as the per capital crime also increases.
+#for dis the mean of distance for five boston employment center raises and the per capital crime decreases.
+# for lstat as the population increases the per capital crime rate also increases.
 
 #3.d) Do any of the census tracts of Boston appear to have particularly high crime rates? Tax rates? 
 #Pupil-teacher ratios? Comment on the range of each predictor.
@@ -146,6 +148,9 @@ t(subset(Boston,medv==min(Boston$medv)))
 row.names(Boston[min(Boston$medv), ])
 range(Boston$tax)
 Boston[min(Boston$medv), ]$tax
+#From the data we can say that Boston is the least desirable place to live.
+
+
 #3.h) In this data set, how many of the census tracts average more than seven rooms per dwelling? More than eight rooms per
 #dwelling? Comment on the census tracts that average more than eight rooms per dwelling.
 nrow(Boston[Boston$rm > 7, ])
@@ -204,6 +209,46 @@ plot(lm.fit)
 #The Residuals are distributed normally and are skewed towards right for second one.
 #For this model the error assumption is not true for constant variance for third graph.
 #We do not have any leverage points for fourth graph. But this one stands out as potential leverage point.
+#5.e) Use the * and : symbols to fit linear regression models with interaction effects. 
+#Do any interactions appear to be statistically significant?
+lm.fit = lm(mpg ~.-name+displacement:weight, data = Auto)
+summary(lm.fit)
+#We have statistically significant interaction between displacement and weight for p-vales.
+#But we do not have any interaction between displacement and cylinders
+#5.f) Try a few different transformations of the variables, such as log(X), ???X, X2. Comment on your findings.
+par(mfrow = c(2, 2))
+plot(log(Auto$horsepower), Auto$mpg)
+plot(sqrt(Auto$horsepower), Auto$mpg)
+plot((Auto$horsepower)^2, Auto$mpg)
+lm.fit = lm(mpg ~.-name+I((displacement)^2)+log(displacement)+displacement:weight, data = Auto)
+summary(lm.fit)
+#We get the most linear plot for log transformation. We are predicting all the things based on horsepower.
 
-
+#6.a) Fit a multiple regression model to predict Sales using Price, Urban, and US.
+library("ISLR")
+?Carseats
+head(Carseats)
+str(Carseats)
+lm.fit = lm(Sales ~ Price+Urban+US, data= Carseats)
+summary(lm.fit)
+#6.b) Provide an interpretation of each coefficient in the model. Be careful-some of the variables in the model are qualitative!
+#The coefficient for PRICE variable can be said as the average of price raise of a dollar is in decrease of 54.4588492 units in the sales remaining predictors are fixed. 
+#For URBAN variable the coefficient can be interpreted as average of unit sales in urban location are 21.9161508 units lesser than of rural location adn all others are fixied.
+#For US variable can be interpreted as average of unit sales in US store is 1200.5726978 higher than that of non US stores and the remaining predictors are fixed.
+#6.c) Write out the model in equation form, being careful to handle the qualitative variables properly.
+#Sales=13.0434689+(???0.0544588)×Price+(???0.0219162)×Urban+(1.2005727)×US+??
+#US=1 if the store is in the US and 0 if not, and with Urban=1 if the store is in an urban location and 0 if not.
+#6.d) For which of the predictors can you reject the null hypothesis H0 : ??j = 0?
+#For PRICE and US variables we will reject null hypothesis.
+#6.e) On the basis of your response to the previous question, fit a smaller model that only uses the predictors for which there is
+#evidence of association with the outcome.
+fits <- lm(Sales ~ Price + US, data = Carseats)
+summary(fits)
+#6.f) How well do the models in (a) and (e) fit the data?
+#Nearly 23.9262888% of variability can be explained in this model. For smaller model the R2 is better than that of larger model.
+#6.g) Using the model from (e), obtain 95 % confidence intervals for the coefficient(s).
+confint(fits)
+#6.h) Is there evidence of outliers or high leverage observations in the model from (e)?
+par(mfrow = c(2, 2))
+plot(fits)
 
